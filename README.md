@@ -75,7 +75,7 @@
         <button id="kontrolButon" class="btn-baslat" onclick="toggleDinleme()">
             <span id="butonIkon">🎤</span> <span id="butonYazi">Dinlemeyi Başlat</span>
         </button>
-        <button onclick="testSes()" class="btn-test">🔊 Ses Testi</button>
+        <button onclick="testSes()" class="btn-test"> Ses Testi</button>
         
         <div id="sonuc">
             <span id="durumIsigi" class="durum-gosterge pasif"></span>
@@ -85,16 +85,16 @@
         <div class="ozellik-listesi">
             <h3>📱 TELEFON & WHATSAPP:</h3>
             <ul>
-                <li>📞 <b>"hacer ara"</b></li>
+                <li>📞 <b>"MirecaH ara"</b></li>
                 <li> <b>"Oğlum ara"</b> veya <b>"Kızım ara"</b></li>
-                <li>📞 <b>"Aybuke ara"</b></li>
+                <li> <b>"Aybuke ara"</b></li>
                 <li>💬 <b>"5551234567'ye WhatsApp'tan yaz"</b></li>
             </ul>
             
             <h3>⏰ HATIRLATICI & NOT:</h3>
             <ul>
-                <li>⏰ <b>"5 dakika sonra hatırlat"</b></li>
-                <li>📝 <b>"Not al: ..."</b></li>
+                <li> <b>"5 dakika sonra hatırlat"</b></li>
+                <li> <b>"Not al: ..."</b></li>
                 <li>📋 <b>"Notlarımı oku"</b></li>
             </ul>
             
@@ -103,7 +103,7 @@
                 <li>🎥 <b>"Video fikri ver"</b></li>
                 <li>📝 <b>"Başlık öner"</b></li>
                 <li>📄 <b>"Açıklama yaz"</b></li>
-                <li>🏷️ <b>"Etiket ver"</b></li>
+                <li>️ <b>"Etiket ver"</b></li>
             </ul>
         </div>
 
@@ -113,19 +113,19 @@
     </div>
 
     <script>
-        // ⚠️ BURAYA KENDİ API ANAHTARINI YAZ (gsk_... ile başlayan)
-        const API_KEY = "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"";
+        // ⚠️ BURAYA KENDİ API ANAHTARINI YAZ (gsk_... ile başlayan - TIRNAK İŞARETİ İLE!)
+        const API_KEY = "gsk_mWOzWQsfUCCaXYCswXA3WGdyb3FYKf8..."; // BURAYA KENDI ANAHTARINI YAZ
         
         let sohbetGecmisi = [];
         let seciliSes = null;
         let recognition = null;
         let dinlemeAktif = false;
         let seslerYuklendiMi = false;
-        let konusuyorMu = false; // Feedback loop önleme
+        let asistanKonuşuyor = false; // Feedback loop önleme - KESİN ÇÖZÜM
 
         // 📱 REHBER
         const rehber = {
-            "hacer": "+905436737439",
+            "mirecah": "+905436737439",
             "oglum": "+905419565425",
             "oğlum": "+905419565425",
             "kızım": "+905102217480",
@@ -222,14 +222,16 @@
                 document.getElementById("butonIkon").innerText = "⏹️";
                 document.getElementById("butonYazi").innerText = "Durdur";
                 document.getElementById("durumIsigi").className = "durum-gosterge aktif";
-                document.getElementById("durumMetni").innerText = "🎙️ Dadaş dinliyor...";
+                document.getElementById("durumMetni").innerText = "️ Dadaş dinliyor...";
             };
 
             recognition.onresult = function(event) {
                 var ses = event.results[event.results.length - 1][0].transcript;
-                if (ses.trim() !== "" && !konusuyorMu) {
+                
+                // SADECE asistan konuşmuyorken işlem yap!
+                if (ses.trim() !== "" && !asistanKonuşuyor) {
                     document.getElementById("sonuc").innerHTML = 
-                        '<span class="durum-gosterge aktif"></span>️ Dediğin: ' + ses;
+                        '<span class="durum-gosterge aktif"></span>🗣️ Dediğin: ' + ses;
                     ekranaYaz("kullanici", ses);
                     sohbetGecmisi.push({role: "user", content: ses});
                     
@@ -240,21 +242,41 @@
             };
 
             recognition.onerror = function(event) {
-                if (event.error !== 'no-speech') console.log("Hata:", event.error);
-            };
-
-            recognition.onend = function() {
-                if (dinlemeAktif && !konusuyorMu) {
-                    setTimeout(() => { try { recognition.start(); } catch(e) {} }, 100);
+                if (event.error !== 'no-speech') {
+                    console.log("Hata:", event.error);
+                }
+                // İzin hatası olursa durdur
+                if (event.error === 'not-allowed') {
+                    alert("Mikrofon izni vermen gerekiyor!");
+                    durdurDinleme();
                 }
             };
 
-            recognition.start();
+            recognition.onend = function() {
+                // SADECE asistan konuşmuyorken ve dinleme aktifse tekrar başlat
+                if (dinlemeAktif && !asistanKonuşuyor) {
+                    setTimeout(() => { 
+                        try { 
+                            recognition.start(); 
+                        } catch(e) {
+                            console.log("Mikrofon başlatılamadı:", e);
+                        }
+                    }, 200);
+                }
+            };
+
+            try {
+                recognition.start();
+            } catch(e) {
+                alert("Mikrofon başlatılamadı. İzin verdiğinden emin ol!");
+            }
         }
 
         function durdurDinleme() {
             dinlemeAktif = false;
-            if (recognition) recognition.stop();
+            if (recognition) {
+                try { recognition.stop(); } catch(e) {}
+            }
             document.getElementById("kontrolButon").className = "btn-baslat";
             document.getElementById("butonIkon").innerText = "";
             document.getElementById("butonYazi").innerText = "Dinlemeyi Başlat";
@@ -407,9 +429,17 @@
 
         // YOUTUBE İSTEK
         async function youtubeIstek(prompt) {
-            if (API_KEY === "BURAYA_KENDI_API_ANAHTARINI_YAZ" || API_KEY === "") {
+            // API anahtarı kontrolü
+            if (!API_KEY || API_KEY === "gsk_mWOzWQsfUCCaXYCswXA3WGdyb3FYKf8..." || API_KEY.includes("BURAYA")) {
                 document.getElementById("durumMetni").innerText = "❌ API anahtarı eksik!";
+                ekranaYaz("asistan", "API anahtarım eksik Birtanem! Lütfen ekle.");
                 return;
+            }
+            
+            // Mikrofonu KAPAT - asistan konuşuyor
+            asistanKonuşuyor = true;
+            if (recognition && dinlemeAktif) {
+                try { recognition.stop(); } catch(e) {}
             }
             
             const sistemMesaji = {
@@ -441,14 +471,31 @@
                 sesliOku(cevap);
             } catch (error) {
                 document.getElementById("durumMetni").innerText = "❌ " + error.message;
+                ekranaYaz("asistan", "Hata: " + error.message);
+            } finally {
+                // İşlem bitince mikrofonu AÇ
+                asistanKonuşuyor = false;
+                if (dinlemeAktif) {
+                    setTimeout(() => {
+                        try { recognition.start(); } catch(e) {}
+                    }, 500);
+                }
             }
         }
 
         // YAPAY ZEKA
         async function yapayZekayaSor() {
-            if (API_KEY === "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" || API_KEY === "") {
+            // API anahtarı kontrolü
+            if (!API_KEY || API_KEY === "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" || API_KEY.includes("BURAYA")) {
                 document.getElementById("durumMetni").innerText = "❌ API anahtarı eksik!";
+                ekranaYaz("asistan", "API anahtarım eksik Birtanem! Lütfen ekle.");
                 return;
+            }
+            
+            // Mikrofonu KAPAT - asistan konuşuyor
+            asistanKonuşuyor = true;
+            if (recognition && dinlemeAktif) {
+                try { recognition.stop(); } catch(e) {}
             }
             
             const sistemMesaji = {
@@ -479,45 +526,63 @@
                 sesliOku(cevap);
             } catch (error) {
                 document.getElementById("durumMetni").innerText = "❌ " + error.message;
+                ekranaYaz("asistan", "Hata: " + error.message);
+            } finally {
+                // İşlem bitince mikrofonu AÇ
+                asistanKonuşuyor = false;
+                if (dinlemeAktif) {
+                    setTimeout(() => {
+                        try { recognition.start(); } catch(e) {}
+                    }, 500);
+                }
             }
         }
 
-        // SESLİ OKUMA (Feedback loop önleme ile)
+        // SESLİ OKUMA (KESİN ÇÖZÜM - Feedback loop tamamen önleniyor)
         function sesliOku(metin) {
             if ('speechSynthesis' in window) {
-                // Mikrofonu geçici olarak durdur
-                konusuyorMu = true;
+                // Mikrofonu KAPAT - asistan konuşuyor
+                asistanKonuşuyor = true;
                 if (recognition && dinlemeAktif) {
                     try { recognition.stop(); } catch(e) {}
                 }
                 
+                // Önceki sesleri durdur
                 window.speechSynthesis.cancel();
+                
                 const cumleler = metin.split(/(?<=[.!?])\s+/).filter(c => c.trim().length > 0);
                 
-                cumleler.forEach((cumle, index) => {
-                    setTimeout(() => {
-                        const utterance = new SpeechSynthesisUtterance(cumle);
-                        utterance.lang = 'tr-TR';
-                        utterance.rate = 0.9;
-                        utterance.pitch = 1.0;
-                        utterance.volume = 1.0;
-                        if (seciliSes) utterance.voice = seciliSes;
-                        
-                        utterance.onend = function() {
-                            // Son cümle bittiğinde mikrofonu tekrar başlat
-                            if (index === cumleler.length - 1) {
-                                konusuyorMu = false;
-                                if (dinlemeAktif) {
-                                    setTimeout(() => {
-                                        try { recognition.start(); } catch(e) {}
-                                    }, 500);
-                                }
-                            }
-                        };
-                        
-                        window.speechSynthesis.speak(utterance);
-                    }, index * 200);
-                });
+                let cumleIndex = 0;
+                
+                function sonrakiCumleyiOku() {
+                    if (cumleIndex >= cumleler.length) {
+                        // Tüm cümleler bitti - mikrofonu AÇ
+                        asistanKonuşuyor = false;
+                        if (dinlemeAktif) {
+                            setTimeout(() => {
+                                try { recognition.start(); } catch(e) {}
+                            }, 500);
+                        }
+                        return;
+                    }
+                    
+                    const cumle = cumleler[cumleIndex];
+                    const utterance = new SpeechSynthesisUtterance(cumle);
+                    utterance.lang = 'tr-TR';
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1.0;
+                    utterance.volume = 1.0;
+                    if (seciliSes) utterance.voice = seciliSes;
+                    
+                    utterance.onend = function() {
+                        cumleIndex++;
+                        sonrakiCumleyiOku();
+                    };
+                    
+                    window.speechSynthesis.speak(utterance);
+                }
+                
+                sonrakiCumleyiOku();
             }
         }
 
