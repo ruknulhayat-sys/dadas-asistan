@@ -85,7 +85,7 @@
         <div class="ozellik-listesi">
             <h3>📱 TELEFON & WHATSAPP:</h3>
             <ul>
-                <li>📞 <b>"MirecaH ara"</b></li>
+                <li>📞 <b>"hacer ara"</b></li>
                 <li> <b>"Oğlum ara"</b> veya <b>"Kızım ara"</b></li>
                 <li>📞 <b>"Aybuke ara"</b></li>
                 <li>💬 <b>"5551234567'ye WhatsApp'tan yaz"</b></li>
@@ -125,7 +125,7 @@
 
         // 📱 REHBER
         const rehber = {
-            "mirecah": "+905436737439",
+            "hacer": "+905436737439",
             "oglum": "+905419565425",
             "oğlum": "+905419565425",
             "kızım": "+905102217480",
