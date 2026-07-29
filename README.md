@@ -66,7 +66,7 @@
 <body>
     <div class="container">
         <h1>🤠 Dadaş - YouTube Asistanı</h1>
-        <p class="subtitle">Birtanem'in süper asistanı</p>
+        <p class="subtitle">Halil'in süper asistanı</p>
         
         <select id="sesSecimi">
             <option value="">Sesler yükleniyor...</option>
@@ -75,7 +75,7 @@
         <button id="kontrolButon" class="btn-baslat" onclick="toggleDinleme()">
             <span id="butonIkon">🎤</span> <span id="butonYazi">Dinlemeyi Başlat</span>
         </button>
-        <button onclick="testSes()" class="btn-test"> Ses Testi</button>
+        <button onclick="testSes()" class="btn-test">🔊 Ses Testi</button>
         
         <div id="sonuc">
             <span id="durumIsigi" class="durum-gosterge pasif"></span>
@@ -102,8 +102,8 @@
             <ul>
                 <li>🎥 <b>"Video fikri ver"</b></li>
                 <li>📝 <b>"Başlık öner"</b></li>
-                <li>📄 <b>"Açıklama yaz"</b></li>
-                <li>️ <b>"Etiket ver"</b></li>
+                <li> <b>"Açıklama yaz"</b></li>
+                <li> <b>"Etiket ver"</b></li>
             </ul>
         </div>
 
@@ -114,7 +114,7 @@
 
     <script>
         // ⚠️ BURAYA KENDİ API ANAHTARINI YAZ (gsk_... ile başlayan - TIRNAK İŞARETİ İLE!)
-        const API_KEY = "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"; // BURAYA KENDI ANAHTARINI YAZ
+        const API_KEY = "gsk_mWOzWQsfUCCaXYCswXA3WGdyb3FYKf8...";
         
         let sohbetGecmisi = [];
         let seciliSes = null;
@@ -190,7 +190,7 @@
         function testSes() {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance("Merhaba Birtanem, Dadaş çalışıyor!");
+                const utterance = new SpeechSynthesisUtterance("Merhaba Halil, Dadaş çalışıyor!");
                 utterance.lang = 'tr-TR';
                 utterance.rate = 0.9;
                 if (seciliSes) utterance.voice = seciliSes;
@@ -219,7 +219,7 @@
             recognition.onstart = function() {
                 dinlemeAktif = true;
                 document.getElementById("kontrolButon").className = "btn-durdur";
-                document.getElementById("butonIkon").innerText = "⏹️";
+                document.getElementById("butonIkon").innerText = "️";
                 document.getElementById("butonYazi").innerText = "Durdur";
                 document.getElementById("durumIsigi").className = "durum-gosterge aktif";
                 document.getElementById("durumMetni").innerText = "️ Dadaş dinliyor...";
@@ -309,7 +309,7 @@
                 }
                 
                 if (numara) {
-                    const cevap = "Tamam Birtanem, " + (arananKisi || numara) + " arıyorum!";
+                    const cevap = "Tamam Halil, " + (arananKisi || numara) + " arıyorum!";
                     ekranaYaz("asistan", cevap);
                     sesliOku(cevap);
                     
@@ -333,7 +333,7 @@
                 if (numara) {
                     const url = "https://wa.me/" + numara;
                     window.open(url, '_blank');
-                    const cevap = "WhatsApp açılıyor Birtanem!";
+                    const cevap = "WhatsApp açılıyor Halil!";
                     ekranaYaz("asistan", cevap);
                     sesliOku(cevap);
                     return true;
@@ -348,8 +348,8 @@
                     const mesaj = metin.replace(/.*hatırlat/i, '').trim() || "Hatırlatma zamanı!";
                     
                     setTimeout(() => {
-                        alert("⏰ HATIRLATMA: " + mesaj);
-                        sesliOku("Birtanem! " + mesaj);
+                        alert(" HATIRLATMA: " + mesaj);
+                        sesliOku("Halil! " + mesaj);
                     }, dakika * 60 * 1000);
                     
                     const cevap = dakika + " dakika sonra hatırlatacağım!";
@@ -366,7 +366,7 @@
                     const notlar = JSON.parse(localStorage.getItem("dadasNotlar") || "[]");
                     notlar.push({ metin: notMetni, tarih: new Date().toLocaleString('tr-TR') });
                     localStorage.setItem("dadasNotlar", JSON.stringify(notlar));
-                    const cevap = "Not aldım: " + notMetni;
+                    const cevap = "Not aldım Halil: " + notMetni;
                     ekranaYaz("asistan", cevap);
                     sesliOku(cevap);
                     return true;
@@ -377,11 +377,11 @@
             if (altMetin.includes("notlar") && altMetin.includes("oku")) {
                 const notlar = JSON.parse(localStorage.getItem("dadasNotlar") || "[]");
                 if (notlar.length === 0) {
-                    const cevap = "Hiç notun yok.";
+                    const cevap = "Hiç notun yok Halil.";
                     ekranaYaz("asistan", cevap);
                     sesliOku(cevap);
                 } else {
-                    let cevap = "Notların: ";
+                    let cevap = "Notların Halil: ";
                     notlar.forEach((not, i) => {
                         cevap += (i+1) + ". " + not.metin + ". ";
                     });
@@ -394,7 +394,7 @@
             // NOTLARI SİL
             if (altMetin.includes("notları sil")) {
                 localStorage.removeItem("dadasNotlar");
-                const cevap = "Notları sildim.";
+                const cevap = "Notları sildim Halil.";
                 ekranaYaz("asistan", cevap);
                 sesliOku(cevap);
                 return true;
@@ -432,7 +432,7 @@
             // API anahtarı kontrolü
             if (!API_KEY || API_KEY === "gsk_mWOzWQsfUCCaXYCswXA3WGdyb3FYKf8..." || API_KEY.includes("BURAYA")) {
                 document.getElementById("durumMetni").innerText = "❌ API anahtarı eksik!";
-                ekranaYaz("asistan", "API anahtarım eksik Birtanem! Lütfen ekle.");
+                ekranaYaz("asistan", "API anahtarım eksik Halil! Lütfen ekle.");
                 return;
             }
             
@@ -444,7 +444,7 @@
             
             const sistemMesaji = {
                 role: "system", 
-                content: "Sen Dadaş'sın, Birtanem'in YouTube asistanısın. Kısa, samimi ve Türkçe cevap ver."
+                content: "Sen Dadaş'sın, Halil'in YouTube asistanısın. Kısa, samimi ve Türkçe cevap ver."
             };
             
             const userMesaj = { role: "user", content: prompt };
@@ -488,7 +488,7 @@
             // API anahtarı kontrolü
             if (!API_KEY || API_KEY === "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" || API_KEY.includes("BURAYA")) {
                 document.getElementById("durumMetni").innerText = "❌ API anahtarı eksik!";
-                ekranaYaz("asistan", "API anahtarım eksik Birtanem! Lütfen ekle.");
+                ekranaYaz("asistan", "API anahtarım eksik Halil! Lütfen ekle.");
                 return;
             }
             
@@ -500,7 +500,7 @@
             
             const sistemMesaji = {
                 role: "system", 
-                content: "Sen Dadaş'sın, Birtanem'in kişisel asistanısın. Kısa, samimi ve Türkçe cevap ver."
+                content: "Sen Dadaş'sın, Halil'in kişisel asistanısın. Kısa, samimi ve Türkçe cevap ver."
             };
             const tumMesajlar = [sistemMesaji, ...sohbetGecmisi];
             
