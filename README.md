@@ -114,7 +114,7 @@
 
     <script>
         // ⚠️ BURAYA KENDİ API ANAHTARINI YAZ (gsk_... ile başlayan - TIRNAK İŞARETİ İLE!)
-        const API_KEY = "gsk_mWOzWQsfUCCaXYCswXA3WGdyb3FYKf8..."; // BURAYA KENDI ANAHTARINI YAZ
+        const API_KEY = "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"; // BURAYA KENDI ANAHTARINI YAZ
         
         let sohbetGecmisi = [];
         let seciliSes = null;
