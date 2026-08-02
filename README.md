@@ -87,7 +87,7 @@
             <ul>
                 <li>📞 <b>"MirecaH ara"</b></li>
                 <li>👦 <b>"Oğlum ara"</b> veya <b>"Kızım ara"</b></li>
-                <li> <b>"Aybuke ara"</b></li>
+                <li>📞 <b>"Aybuke ara"</b></li>
                 <li>💬 <b>"5551234567'ye WhatsApp'tan yaz"</b></li>
             </ul>
             
@@ -101,7 +101,7 @@
             <h3>🎬 YOUTUBE:</h3>
             <ul>
                 <li>🎥 <b>"Video fikri ver"</b></li>
-                <li>📝 <b>"Başlık öner"</b></li>
+                <li> <b>"Başlık öner"</b></li>
                 <li>📄 <b>"Açıklama yaz"</b></li>
                 <li>🏷️ <b>"Etiket ver"</b></li>
             </ul>
@@ -121,6 +121,8 @@
         let dinlemeAktif = false;
         let seslerYuklendiMi = false;
         let asistanKonuşuyor = false;
+        let konuşmaZamanlayici = null;
+        let geciciMetin = "";
 
         const rehber = {
             "mirecah": "+905436737439",
@@ -210,8 +212,8 @@
             
             recognition = new SpeechRecognition();
             recognition.lang = 'tr-TR';
-            recognition.interimResults = false;
-            recognition.continuous = true; // SÜREKLİ DİNLE - İzin bir kez verilir
+            recognition.interimResults = true; // Geçici sonuçları al
+            recognition.continuous = true;
 
             recognition.onstart = function() {
                 dinlemeAktif = true;
@@ -219,22 +221,41 @@
                 document.getElementById("butonIkon").innerText = "⏹️";
                 document.getElementById("butonYazi").innerText = "Durdur";
                 document.getElementById("durumIsigi").className = "durum-gosterge aktif";
-                document.getElementById("durumMetni").innerText = "🎙️ Dadaş dinliyor...";
+                document.getElementById("durumMetni").innerText = "️ Dadaş dinliyor...";
             };
 
             recognition.onresult = function(event) {
-                var ses = event.results[event.results.length - 1][0].transcript;
+                geciciMetin = "";
+                let finalMetin = "";
                 
-                // Asistan konuşuyorsa görmezden gel (feedback loop önleme)
-                if (ses.trim() !== "" && !asistanKonuşuyor) {
-                    document.getElementById("sonuc").innerHTML = 
-                        '<span class="durum-gosterge aktif"></span>🗣️ Dediğin: ' + ses;
-                    ekranaYaz("kullanici", ses);
-                    sohbetGecmisi.push({role: "user", content: ses});
-                    
-                    if (!komutKontrol(ses)) {
-                        yapayZekayaSor();
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalMetin += transcript;
+                    } else {
+                        geciciMetin += transcript;
                     }
+                }
+                
+                // Geçici metni göster (konuşuyor...)
+                if (geciciMetin) {
+                    document.getElementById("durumMetni").innerText = "️ Dinleniyor: " + geciciMetin;
+                }
+                
+                // Sadece FINAL (bitmiş) konuşmayı işle
+                if (finalMetin.trim() !== "" && !asistanKonuşuyor) {
+                    // Konuşma bittikten sonra 1.5 saniye bekle
+                    clearTimeout(konuşmaZamanlayici);
+                    konuşmaZamanlayici = setTimeout(() => {
+                        document.getElementById("sonuc").innerHTML = 
+                            '<span class="durum-gosterge aktif"></span>🗣️ Dediğin: ' + finalMetin;
+                        ekranaYaz("kullanici", finalMetin);
+                        sohbetGecmisi.push({role: "user", content: finalMetin});
+                        
+                        if (!komutKontrol(finalMetin)) {
+                            yapayZekayaSor();
+                        }
+                    }, 1500); // 1.5 saniye bekle
                 }
             };
 
@@ -247,18 +268,13 @@
             };
 
             recognition.onend = function() {
-                // Sürekli dinleme için otomatik restart
-                // Ama asistan konuşuyorsa bekle
                 if (dinlemeAktif && !asistanKonuşuyor) {
                     setTimeout(() => { 
                         try { 
                             recognition.start(); 
-                        } catch(e) {
-                            console.log("Restart:", e);
-                        }
+                        } catch(e) {}
                     }, 100);
                 } else if (dinlemeAktif && asistanKonuşuyor) {
-                    // Asistan konuşuyor, biraz bekle sonra tekrar dene
                     setTimeout(() => { 
                         try { 
                             recognition.start(); 
@@ -276,11 +292,12 @@
 
         function durdurDinleme() {
             dinlemeAktif = false;
+            clearTimeout(konuşmaZamanlayici);
             if (recognition) {
                 try { recognition.stop(); } catch(e) {}
             }
             document.getElementById("kontrolButon").className = "btn-baslat";
-            document.getElementById("butonIkon").innerText = "";
+            document.getElementById("butonIkon").innerText = "🎤";
             document.getElementById("butonYazi").innerText = "Dinlemeyi Başlat";
             document.getElementById("durumIsigi").className = "durum-gosterge pasif";
             document.getElementById("durumMetni").innerText = "Dadaş durdu";
@@ -346,7 +363,7 @@
                     const mesaj = metin.replace(/.*hatırlat/i, '').trim() || "Hatırlatma zamanı!";
                     
                     setTimeout(() => {
-                        alert("⏰ HATIRLATMA: " + mesaj);
+                        alert(" HATIRLATMA: " + mesaj);
                         sesliOku("Halil! " + mesaj);
                     }, dakika * 60 * 1000);
                     
@@ -425,7 +442,6 @@
             }
             
             asistanKonuşuyor = true;
-            // Mikrofonu durdurma - sadece flag ile görmezden gel
             
             const sistemMesaji = {
                 role: "system", 
@@ -466,7 +482,6 @@
             }
             
             asistanKonuşuyor = true;
-            // Mikrofonu durdurma - sadece flag ile görmezden gel
             
             const sistemMesaji = {
                 role: "system", 
