@@ -65,29 +65,29 @@
 </head>
 <body>
     <div class="container">
-        <h1> Dadaş - YouTube Asistanı</h1>
+        <h1>🤠 Dadaş - YouTube Asistanı</h1>
         <p class="subtitle">Halil'in süper asistanı</p>
         
         <select id="sesSecimi">
             <option value="">Sesler yükleniyor...</option>
         </select>
 
-        <button id="kontrolButon" class="btn-baslat" onclick="toggleDinleme()">
-            <span id="butonIkon">🎤</span> <span id="butonYazi">Dinlemeyi Başlat</span>
+        <button id="kontrolButon" class="btn-baslat" onclick="tekSeferDinle()">
+            <span id="butonIkon">🎤</span> <span id="butonYazi">Konuş</span>
         </button>
         <button onclick="testSes()" class="btn-test">🔊 Ses Testi</button>
         
         <div id="sonuc">
             <span id="durumIsigi" class="durum-gosterge pasif"></span>
-            <span id="durumMetni">Dadaş hazır</span>
+            <span id="durumMetni">Dadaş hazır - Butona bas ve konuş</span>
         </div>
 
         <div class="ozellik-listesi">
-            <h3> TELEFON & WHATSAPP:</h3>
+            <h3>📱 TELEFON & WHATSAPP:</h3>
             <ul>
-                <li> <b>"MirecaH ara"</b></li>
+                <li>📞 <b>"MirecaH ara"</b></li>
                 <li> <b>"Oğlum ara"</b> veya <b>"Kızım ara"</b></li>
-                <li>📞 <b>"Aybuke ara"</b></li>
+                <li> <b>"Aybuke ara"</b></li>
                 <li>💬 <b>"5551234567'ye WhatsApp'tan yaz"</b></li>
             </ul>
             
@@ -113,18 +113,15 @@
     </div>
 
     <script>
-        // ️ BURAYA KENDİ API ANAHTARINI YAZ (TIRNAK İÇİNDE!)
         const API_KEY = "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";
         
         let sohbetGecmisi = [];
         let seciliSes = null;
         let recognition = null;
-        let dinlemeAktif = false;
         let seslerYuklendiMi = false;
         let asistanKonuşuyor = false;
-        let sesler = [];
+        let dinleniyorMu = false;
 
-        // 📱 REHBER
         const rehber = {
             "mirecah": "+905436737439",
             "oglum": "+905419565425",
@@ -138,9 +135,9 @@
             "aybuke": "+905467807118"
         };
 
-        // SESLERİ YÜKLE - İYİLEŞTİRİLMİŞ
         function sesleriYukle() {
-            sesler = speechSynthesis.getVoices();
+            if (seslerYuklendiMi) return;
+            const sesler = speechSynthesis.getVoices();
             if (sesler.length === 0) return;
             
             const secimKutusu = document.getElementById("sesSecimi");
@@ -148,25 +145,19 @@
             
             let enIyiKadinSes = -1;
             let ilkTurkce = -1;
-            let ilkSes = 0;
             
-            // Önce tüm sesleri listele
             sesler.forEach((ses, index) => {
                 const option = document.createElement("option");
                 option.value = index;
                 option.text = ses.name + " - " + ses.lang;
                 secimKutusu.appendChild(option);
                 
-                if (index === 0) ilkSes = index;
-                
                 const isim = ses.name.toLowerCase();
                 const dil = ses.lang.toLowerCase();
                 
-                // Türkçe sesleri bul
                 if (dil.includes('tr') || dil.includes('tur')) {
                     if (ilkTurkce === -1) ilkTurkce = index;
                     
-                    // Kadın sesi ara (birçok isim pattern'i)
                     if (enIyiKadinSes === -1) {
                         const kadinPatternleri = ['female', 'kadin', 'kadın', 'emel', 'natural', 'google türkçe', 'microsoft yeliz', 'microsoft filiz', 'zeynep', 'seda'];
                         if (kadinPatternleri.some(p => isim.includes(p))) {
@@ -176,8 +167,7 @@
                 }
             });
             
-            // Öncelik sırası: En iyi kadın ses > İlk Türkçe > İlk ses
-            let secilecekIndex = enIyiKadinSes !== -1 ? enIyiKadinSes : (ilkTurkce !== -1 ? ilkTurkce : ilkSes);
+            let secilecekIndex = enIyiKadinSes !== -1 ? enIyiKadinSes : (ilkTurkce !== -1 ? ilkTurkce : 0);
             
             secimKutusu.value = secilecekIndex;
             seciliSes = sesler[secilecekIndex];
@@ -187,16 +177,12 @@
             };
             
             seslerYuklendiMi = true;
-            console.log("Seçilen ses:", seciliSes.name);
         }
 
-        // Sesler yüklendiğinde tetikle
         speechSynthesis.onvoiceschanged = sesleriYukle;
         setTimeout(sesleriYukle, 100);
         setTimeout(sesleriYukle, 500);
-        setTimeout(sesleriYukle, 1000);
 
-        // SES TESTİ
         function testSes() {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
@@ -210,32 +196,26 @@
             }
         }
 
-        // DİNLEME AÇ/KAPA
-        function toggleDinleme() {
-            if (dinlemeAktif) durdurDinleme();
-            else baslatDinleme();
-        }
-
-        function baslatDinleme() {
+        function tekSeferDinle() {
+            if (dinleniyorMu) return; // Zaten dinliyorsa çık
+            
             var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) { 
                 alert("Chrome veya Edge kullan!"); 
                 return; 
             }
             
+            dinleniyorMu = true;
+            document.getElementById("kontrolButon").className = "btn-durdur";
+            document.getElementById("butonIkon").innerText = "⏳";
+            document.getElementById("butonYazi").innerText = "Dinleniyor...";
+            document.getElementById("durumIsigi").className = "durum-gosterge aktif";
+            document.getElementById("durumMetni").innerText = "🎙️ Konuş Halil...";
+            
             recognition = new SpeechRecognition();
             recognition.lang = 'tr-TR';
             recognition.interimResults = false;
-            recognition.continuous = true; // SÜREKLİ DİNLE - izin sorunu için
-
-            recognition.onstart = function() {
-                dinlemeAktif = true;
-                document.getElementById("kontrolButon").className = "btn-durdur";
-                document.getElementById("butonIkon").innerText = "⏹️";
-                document.getElementById("butonYazi").innerText = "Durdur";
-                document.getElementById("durumIsigi").className = "durum-gosterge aktif";
-                document.getElementById("durumMetni").innerText = "️ Dadaş dinliyor...";
-            };
+            recognition.continuous = false; // SADECE BİR KEZ DİNLE
 
             recognition.onresult = function(event) {
                 var ses = event.results[event.results.length - 1][0].transcript;
@@ -255,44 +235,36 @@
             recognition.onerror = function(event) {
                 console.log("Hata:", event.error);
                 if (event.error === 'not-allowed') {
-                    alert("Mikrofon izni vermen gerekiyor!");
-                    durdurDinleme();
+                    alert("Mikrofon izni vermen gerekiyor Halil!");
                 }
+                dinleniyorMu = false;
+                document.getElementById("kontrolButon").className = "btn-baslat";
+                document.getElementById("butonIkon").innerText = "🎤";
+                document.getElementById("butonYazi").innerText = "Konuş";
+                document.getElementById("durumIsigi").className = "durum-gosterge pasif";
+                document.getElementById("durumMetni").innerText = "Dadaş hazır - Butona bas ve konuş";
             };
 
             recognition.onend = function() {
-                // Otomatik yeniden başlat - izin sorunu için
-                if (dinlemeAktif && !asistanKonuşuyor) {
-                    setTimeout(() => { 
-                        try { 
-                            recognition.start(); 
-                        } catch(e) {
-                            console.log("Restart hatası:", e);
-                        }
-                    }, 100);
-                }
+                dinleniyorMu = false;
+                document.getElementById("kontrolButon").className = "btn-baslat";
+                document.getElementById("butonIkon").innerText = "🎤";
+                document.getElementById("butonYazi").innerText = "Konuş";
+                document.getElementById("durumIsigi").className = "durum-gosterge pasif";
+                document.getElementById("durumMetni").innerText = "Dadaş hazır - Butona bas ve konuş";
             };
 
             try {
                 recognition.start();
             } catch(e) {
                 console.log("Başlatma hatası:", e);
+                dinleniyorMu = false;
+                document.getElementById("kontrolButon").className = "btn-baslat";
+                document.getElementById("butonIkon").innerText = "🎤";
+                document.getElementById("butonYazi").innerText = "Konuş";
             }
         }
 
-        function durdurDinleme() {
-            dinlemeAktif = false;
-            if (recognition) {
-                try { recognition.stop(); } catch(e) {}
-            }
-            document.getElementById("kontrolButon").className = "btn-baslat";
-            document.getElementById("butonIkon").innerText = "🎤";
-            document.getElementById("butonYazi").innerText = "Dinlemeyi Başlat";
-            document.getElementById("durumIsigi").className = "durum-gosterge pasif";
-            document.getElementById("durumMetni").innerText = "Dadaş durdu";
-        }
-
-        // KOMUT KONTROL
         function komutKontrol(metin) {
             const altMetin = metin.toLowerCase();
             
@@ -353,7 +325,7 @@
                     const mesaj = metin.replace(/.*hatırlat/i, '').trim() || "Hatırlatma zamanı!";
                     
                     setTimeout(() => {
-                        alert("⏰ HATIRLATMA: " + mesaj);
+                        alert(" HATIRLATMA: " + mesaj);
                         sesliOku("Halil! " + mesaj);
                     }, dakika * 60 * 1000);
                     
@@ -432,9 +404,6 @@
             }
             
             asistanKonuşuyor = true;
-            if (recognition && dinlemeAktif) {
-                try { recognition.stop(); } catch(e) {}
-            }
             
             const sistemMesaji = {
                 role: "system", 
@@ -464,10 +433,7 @@
             } finally {
                 setTimeout(() => {
                     asistanKonuşuyor = false;
-                    if (dinlemeAktif && recognition) {
-                        try { recognition.start(); } catch(e) {}
-                    }
-                }, 1000);
+                }, 500);
             }
         }
 
@@ -478,9 +444,6 @@
             }
             
             asistanKonuşuyor = true;
-            if (recognition && dinlemeAktif) {
-                try { recognition.stop(); } catch(e) {}
-            }
             
             const sistemMesaji = {
                 role: "system", 
@@ -511,17 +474,13 @@
             } finally {
                 setTimeout(() => {
                     asistanKonuşuyor = false;
-                    if (dinlemeAktif && recognition) {
-                        try { recognition.start(); } catch(e) {}
-                    }
-                }, 1000);
+                }, 500);
             }
         }
 
         function sesliOku(metin) {
             if (!('speechSynthesis' in window)) return;
             
-            asistanKonuşuyor = true;
             window.speechSynthesis.cancel();
             
             setTimeout(() => {
@@ -536,21 +495,11 @@
                 }
                 
                 utterance.onend = function() {
-                    asistanKonuşuyor = false;
-                    if (dinlemeAktif && recognition) {
-                        setTimeout(() => {
-                            try { recognition.start(); } catch(e) {}
-                        }, 300);
-                    }
+                    // Ses bitti
                 };
                 
                 utterance.onerror = function() {
-                    asistanKonuşuyor = false;
-                    if (dinlemeAktif && recognition) {
-                        setTimeout(() => {
-                            try { recognition.start(); } catch(e) {}
-                        }, 300);
-                    }
+                    // Hata
                 };
                 
                 window.speechSynthesis.speak(utterance);
