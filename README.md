@@ -65,7 +65,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🤠 Dadaş - YouTube Asistanı</h1>
+        <h1> Dadaş - YouTube Asistanı</h1>
         <p class="subtitle">Halil'in süper asistanı</p>
         
         <select id="sesSecimi">
@@ -83,18 +83,18 @@
         </div>
 
         <div class="ozellik-listesi">
-            <h3>📱 TELEFON & WHATSAPP:</h3>
+            <h3> TELEFON & WHATSAPP:</h3>
             <ul>
-                <li>📞 <b>"MirecaH ara"</b></li>
+                <li> <b>"MirecaH ara"</b></li>
                 <li> <b>"Oğlum ara"</b> veya <b>"Kızım ara"</b></li>
-                <li> <b>"Aybuke ara"</b></li>
+                <li>📞 <b>"Aybuke ara"</b></li>
                 <li>💬 <b>"5551234567'ye WhatsApp'tan yaz"</b></li>
             </ul>
             
             <h3>⏰ HATIRLATICI & NOT:</h3>
             <ul>
-                <li> <b>"5 dakika sonra hatırlat"</b></li>
-                <li> <b>"Not al: ..."</b></li>
+                <li>⏰ <b>"5 dakika sonra hatırlat"</b></li>
+                <li>📝 <b>"Not al: ..."</b></li>
                 <li>📋 <b>"Notlarımı oku"</b></li>
             </ul>
             
@@ -102,8 +102,8 @@
             <ul>
                 <li>🎥 <b>"Video fikri ver"</b></li>
                 <li>📝 <b>"Başlık öner"</b></li>
-                <li> <b>"Açıklama yaz"</b></li>
-                <li> <b>"Etiket ver"</b></li>
+                <li>📄 <b>"Açıklama yaz"</b></li>
+                <li>🏷️ <b>"Etiket ver"</b></li>
             </ul>
         </div>
 
@@ -113,15 +113,16 @@
     </div>
 
     <script>
-        // ⚠️ BURAYA KENDİ API ANAHTARINI YAZ (gsk_... ile başlayan - TIRNAK İŞARETİ İLE!)
-        const API_KEY = "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";
+        // ️ BURAYA KENDİ API ANAHTARINI YAZ (TIRNAK İÇİNDE!)
+        const API_KEY = "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";
         
         let sohbetGecmisi = [];
         let seciliSes = null;
         let recognition = null;
         let dinlemeAktif = false;
         let seslerYuklendiMi = false;
-        let asistanKonuşuyor = false; // Feedback loop önleme - KESİN ÇÖZÜM
+        let asistanKonuşuyor = false;
+        let sesler = [];
 
         // 📱 REHBER
         const rehber = {
@@ -137,64 +138,75 @@
             "aybuke": "+905467807118"
         };
 
-        // SESLERİ YÜKLE
+        // SESLERİ YÜKLE - İYİLEŞTİRİLMİŞ
         function sesleriYukle() {
-            if (seslerYuklendiMi) return;
-            
-            const sesler = speechSynthesis.getVoices();
+            sesler = speechSynthesis.getVoices();
             if (sesler.length === 0) return;
             
             const secimKutusu = document.getElementById("sesSecimi");
             secimKutusu.innerHTML = "";
             
-            let ilkKadinSes = -1;
+            let enIyiKadinSes = -1;
             let ilkTurkce = -1;
+            let ilkSes = 0;
             
+            // Önce tüm sesleri listele
             sesler.forEach((ses, index) => {
                 const option = document.createElement("option");
                 option.value = index;
                 option.text = ses.name + " - " + ses.lang;
+                secimKutusu.appendChild(option);
+                
+                if (index === 0) ilkSes = index;
                 
                 const isim = ses.name.toLowerCase();
-                if (ses.lang.includes('tr') || ses.lang.includes('TR')) {
-                    if (ilkKadinSes === -1 && (isim.includes('emel') || isim.includes('natural') || isim.includes('female'))) {
-                        ilkKadinSes = index;
-                        option.selected = true;
-                        seciliSes = ses;
-                    }
-                    if (ilkTurkce === -1) {
-                        ilkTurkce = index;
+                const dil = ses.lang.toLowerCase();
+                
+                // Türkçe sesleri bul
+                if (dil.includes('tr') || dil.includes('tur')) {
+                    if (ilkTurkce === -1) ilkTurkce = index;
+                    
+                    // Kadın sesi ara (birçok isim pattern'i)
+                    if (enIyiKadinSes === -1) {
+                        const kadinPatternleri = ['female', 'kadin', 'kadın', 'emel', 'natural', 'google türkçe', 'microsoft yeliz', 'microsoft filiz', 'zeynep', 'seda'];
+                        if (kadinPatternleri.some(p => isim.includes(p))) {
+                            enIyiKadinSes = index;
+                        }
                     }
                 }
-                secimKutusu.appendChild(option);
             });
             
-            if (ilkKadinSes === -1 && ilkTurkce !== -1) {
-                secimKutusu.value = ilkTurkce;
-                seciliSes = sesler[ilkTurkce];
-            } else if (ilkKadinSes !== -1) {
-                secimKutusu.value = ilkKadinSes;
-                seciliSes = sesler[ilkKadinSes];
-            }
+            // Öncelik sırası: En iyi kadın ses > İlk Türkçe > İlk ses
+            let secilecekIndex = enIyiKadinSes !== -1 ? enIyiKadinSes : (ilkTurkce !== -1 ? ilkTurkce : ilkSes);
+            
+            secimKutusu.value = secilecekIndex;
+            seciliSes = sesler[secilecekIndex];
             
             secimKutusu.onchange = function() {
                 seciliSes = sesler[this.value];
             };
             
             seslerYuklendiMi = true;
+            console.log("Seçilen ses:", seciliSes.name);
         }
 
-        setTimeout(sesleriYukle, 300);
+        // Sesler yüklendiğinde tetikle
+        speechSynthesis.onvoiceschanged = sesleriYukle;
+        setTimeout(sesleriYukle, 100);
+        setTimeout(sesleriYukle, 500);
+        setTimeout(sesleriYukle, 1000);
 
         // SES TESTİ
         function testSes() {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance("Merhaba Halil, Dadaş çalışıyor!");
-                utterance.lang = 'tr-TR';
-                utterance.rate = 0.9;
-                if (seciliSes) utterance.voice = seciliSes;
-                window.speechSynthesis.speak(utterance);
+                setTimeout(() => {
+                    const utterance = new SpeechSynthesisUtterance("Merhaba Halil, Dadaş çalışıyor!");
+                    utterance.lang = 'tr-TR';
+                    utterance.rate = 0.9;
+                    if (seciliSes) utterance.voice = seciliSes;
+                    window.speechSynthesis.speak(utterance);
+                }, 100);
             }
         }
 
@@ -214,12 +226,12 @@
             recognition = new SpeechRecognition();
             recognition.lang = 'tr-TR';
             recognition.interimResults = false;
-            recognition.continuous = true;
+            recognition.continuous = true; // SÜREKLİ DİNLE - izin sorunu için
 
             recognition.onstart = function() {
                 dinlemeAktif = true;
                 document.getElementById("kontrolButon").className = "btn-durdur";
-                document.getElementById("butonIkon").innerText = "️";
+                document.getElementById("butonIkon").innerText = "⏹️";
                 document.getElementById("butonYazi").innerText = "Durdur";
                 document.getElementById("durumIsigi").className = "durum-gosterge aktif";
                 document.getElementById("durumMetni").innerText = "️ Dadaş dinliyor...";
@@ -228,7 +240,6 @@
             recognition.onresult = function(event) {
                 var ses = event.results[event.results.length - 1][0].transcript;
                 
-                // SADECE asistan konuşmuyorken işlem yap!
                 if (ses.trim() !== "" && !asistanKonuşuyor) {
                     document.getElementById("sonuc").innerHTML = 
                         '<span class="durum-gosterge aktif"></span>🗣️ Dediğin: ' + ses;
@@ -242,10 +253,7 @@
             };
 
             recognition.onerror = function(event) {
-                if (event.error !== 'no-speech') {
-                    console.log("Hata:", event.error);
-                }
-                // İzin hatası olursa durdur
+                console.log("Hata:", event.error);
                 if (event.error === 'not-allowed') {
                     alert("Mikrofon izni vermen gerekiyor!");
                     durdurDinleme();
@@ -253,22 +261,22 @@
             };
 
             recognition.onend = function() {
-                // SADECE asistan konuşmuyorken ve dinleme aktifse tekrar başlat
+                // Otomatik yeniden başlat - izin sorunu için
                 if (dinlemeAktif && !asistanKonuşuyor) {
                     setTimeout(() => { 
                         try { 
                             recognition.start(); 
                         } catch(e) {
-                            console.log("Mikrofon başlatılamadı:", e);
+                            console.log("Restart hatası:", e);
                         }
-                    }, 200);
+                    }, 100);
                 }
             };
 
             try {
                 recognition.start();
             } catch(e) {
-                alert("Mikrofon başlatılamadı. İzin verdiğinden emin ol!");
+                console.log("Başlatma hatası:", e);
             }
         }
 
@@ -278,7 +286,7 @@
                 try { recognition.stop(); } catch(e) {}
             }
             document.getElementById("kontrolButon").className = "btn-baslat";
-            document.getElementById("butonIkon").innerText = "";
+            document.getElementById("butonIkon").innerText = "🎤";
             document.getElementById("butonYazi").innerText = "Dinlemeyi Başlat";
             document.getElementById("durumIsigi").className = "durum-gosterge pasif";
             document.getElementById("durumMetni").innerText = "Dadaş durdu";
@@ -288,7 +296,6 @@
         function komutKontrol(metin) {
             const altMetin = metin.toLowerCase();
             
-            // TELEFON ARAMA
             if (altMetin.includes("ara")) {
                 let numara = null;
                 let arananKisi = "";
@@ -322,7 +329,6 @@
                 }
             }
             
-            // WHATSAPP
             if (altMetin.includes("whatsapp")) {
                 let numara = null;
                 const numaraMatch = metin.match(/\d{10,11}/);
@@ -340,7 +346,6 @@
                 }
             }
             
-            // HATIRLATICI
             if (altMetin.includes("hatırlat")) {
                 const dakikaMatch = altMetin.match(/(\d+)\s*dakika/);
                 if (dakikaMatch) {
@@ -348,18 +353,17 @@
                     const mesaj = metin.replace(/.*hatırlat/i, '').trim() || "Hatırlatma zamanı!";
                     
                     setTimeout(() => {
-                        alert(" HATIRLATMA: " + mesaj);
+                        alert("⏰ HATIRLATMA: " + mesaj);
                         sesliOku("Halil! " + mesaj);
                     }, dakika * 60 * 1000);
                     
-                    const cevap = dakika + " dakika sonra hatırlatacağım!";
+                    const cevap = dakika + " dakika sonra hatırlatacağım Halil!";
                     ekranaYaz("asistan", cevap);
                     sesliOku(cevap);
                     return true;
                 }
             }
             
-            // NOT ALMA
             if (altMetin.includes("not al")) {
                 const notMetni = metin.replace(/not al[:\s]*/i, '').trim();
                 if (notMetni) {
@@ -373,7 +377,6 @@
                 }
             }
             
-            // NOTLARI OKU
             if (altMetin.includes("notlar") && altMetin.includes("oku")) {
                 const notlar = JSON.parse(localStorage.getItem("dadasNotlar") || "[]");
                 if (notlar.length === 0) {
@@ -391,7 +394,6 @@
                 return true;
             }
             
-            // NOTLARI SİL
             if (altMetin.includes("notları sil")) {
                 localStorage.removeItem("dadasNotlar");
                 const cevap = "Notları sildim Halil.";
@@ -400,25 +402,21 @@
                 return true;
             }
             
-            // YOUTUBE - VİDEO FİKRİ
             if (altMetin.includes("video fikri") || altMetin.includes("ne videosu")) {
                 youtubeIstek("YouTube için yaratıcı video fikirleri ver. Kısa, net ve Türkçe cevap ver.");
                 return true;
             }
             
-            // YOUTUBE - BAŞLIK ÖNER
             if (altMetin.includes("başlık öner") || altMetin.includes("başlık ver")) {
                 youtubeIstek("YouTube videosu için SEO uyumlu, dikkat çekici 5 başlık öner. Kısa ve Türkçe.");
                 return true;
             }
             
-            // YOUTUBE - AÇIKLAMA
             if (altMetin.includes("açıklama yaz") || altMetin.includes("açıklama ver")) {
                 youtubeIstek("YouTube videosu için SEO uyumlu, ilgi çekici bir açıklama yaz. Kısa ve Türkçe.");
                 return true;
             }
             
-            // YOUTUBE - ETİKET
             if (altMetin.includes("etiket") || altMetin.includes("hashtag")) {
                 youtubeIstek("YouTube videosu için popüler hashtag ve etiketler ver. 10-15 tane, Türkçe ve İngilizce karışık.");
                 return true;
@@ -427,16 +425,12 @@
             return false;
         }
 
-        // YOUTUBE İSTEK
         async function youtubeIstek(prompt) {
-            // API anahtarı kontrolü
-            if (!API_KEY || API_KEY === "gsk_mWOzWQsfUCCaXYCswXA3WGdyb3FYKf8..." || API_KEY.includes("BURAYA")) {
-                document.getElementById("durumMetni").innerText = "❌ API anahtarı eksik!";
-                ekranaYaz("asistan", "API anahtarım eksik Halil! Lütfen ekle.");
+            if (!API_KEY || API_KEY.includes("BURAYA") || API_KEY.length < 20) {
+                ekranaYaz("asistan", "API anahtarım eksik Halil!");
                 return;
             }
             
-            // Mikrofonu KAPAT - asistan konuşuyor
             asistanKonuşuyor = true;
             if (recognition && dinlemeAktif) {
                 try { recognition.stop(); } catch(e) {}
@@ -447,9 +441,6 @@
                 content: "Sen Dadaş'sın, Halil'in YouTube asistanısın. Kısa, samimi ve Türkçe cevap ver."
             };
             
-            const userMesaj = { role: "user", content: prompt };
-            const tumMesajlar = [sistemMesaji, userMesaj];
-            
             try {
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
@@ -459,40 +450,33 @@
                     },
                     body: JSON.stringify({
                         model: "llama-3.3-70b-versatile",
-                        messages: tumMesajlar
+                        messages: [sistemMesaji, { role: "user", content: prompt }]
                     })
                 });
                 const data = await response.json();
-                if (!response.ok) throw new Error(`API: ${data.error?.message || 'Hata'}`);
-                if (!data.choices || data.choices.length === 0) throw new Error("Boş cevap");
+                if (!response.ok) throw new Error(data.error?.message || 'Hata');
                 
                 const cevap = data.choices[0].message.content;
                 ekranaYaz("asistan", "🎬 " + cevap);
                 sesliOku(cevap);
             } catch (error) {
-                document.getElementById("durumMetni").innerText = "❌ " + error.message;
                 ekranaYaz("asistan", "Hata: " + error.message);
             } finally {
-                // İşlem bitince mikrofonu AÇ
-                asistanKonuşuyor = false;
-                if (dinlemeAktif) {
-                    setTimeout(() => {
+                setTimeout(() => {
+                    asistanKonuşuyor = false;
+                    if (dinlemeAktif && recognition) {
                         try { recognition.start(); } catch(e) {}
-                    }, 500);
-                }
+                    }
+                }, 1000);
             }
         }
 
-        // YAPAY ZEKA
         async function yapayZekayaSor() {
-            // API anahtarı kontrolü
-            if (!API_KEY || API_KEY === "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" || API_KEY.includes("BURAYA")) {
-                document.getElementById("durumMetni").innerText = "❌ API anahtarı eksik!";
-                ekranaYaz("asistan", "API anahtarım eksik Halil! Lütfen ekle.");
+            if (!API_KEY || API_KEY.includes("BURAYA") || API_KEY.length < 20) {
+                ekranaYaz("asistan", "API anahtarım eksik Halil!");
                 return;
             }
             
-            // Mikrofonu KAPAT - asistan konuşuyor
             asistanKonuşuyor = true;
             if (recognition && dinlemeAktif) {
                 try { recognition.stop(); } catch(e) {}
@@ -502,7 +486,6 @@
                 role: "system", 
                 content: "Sen Dadaş'sın, Halil'in kişisel asistanısın. Kısa, samimi ve Türkçe cevap ver."
             };
-            const tumMesajlar = [sistemMesaji, ...sohbetGecmisi];
             
             try {
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -513,77 +496,65 @@
                     },
                     body: JSON.stringify({
                         model: "llama-3.3-70b-versatile",
-                        messages: tumMesajlar
+                        messages: [sistemMesaji, ...sohbetGecmisi]
                     })
                 });
                 const data = await response.json();
-                if (!response.ok) throw new Error(`API: ${data.error?.message || 'Hata'}`);
-                if (!data.choices || data.choices.length === 0) throw new Error("Boş cevap");
+                if (!response.ok) throw new Error(data.error?.message || 'Hata');
                 
                 const cevap = data.choices[0].message.content;
                 ekranaYaz("asistan", cevap);
                 sohbetGecmisi.push({role: "assistant", content: cevap});
                 sesliOku(cevap);
             } catch (error) {
-                document.getElementById("durumMetni").innerText = "❌ " + error.message;
                 ekranaYaz("asistan", "Hata: " + error.message);
             } finally {
-                // İşlem bitince mikrofonu AÇ
-                asistanKonuşuyor = false;
-                if (dinlemeAktif) {
-                    setTimeout(() => {
+                setTimeout(() => {
+                    asistanKonuşuyor = false;
+                    if (dinlemeAktif && recognition) {
                         try { recognition.start(); } catch(e) {}
-                    }, 500);
-                }
+                    }
+                }, 1000);
             }
         }
 
-        // SESLİ OKUMA (KESİN ÇÖZÜM - Feedback loop tamamen önleniyor)
         function sesliOku(metin) {
-            if ('speechSynthesis' in window) {
-                // Mikrofonu KAPAT - asistan konuşuyor
-                asistanKonuşuyor = true;
-                if (recognition && dinlemeAktif) {
-                    try { recognition.stop(); } catch(e) {}
+            if (!('speechSynthesis' in window)) return;
+            
+            asistanKonuşuyor = true;
+            window.speechSynthesis.cancel();
+            
+            setTimeout(() => {
+                const utterance = new SpeechSynthesisUtterance(metin);
+                utterance.lang = 'tr-TR';
+                utterance.rate = 0.9;
+                utterance.pitch = 1.1;
+                utterance.volume = 1.0;
+                
+                if (seciliSes) {
+                    utterance.voice = seciliSes;
                 }
                 
-                // Önceki sesleri durdur
-                window.speechSynthesis.cancel();
-                
-                const cumleler = metin.split(/(?<=[.!?])\s+/).filter(c => c.trim().length > 0);
-                
-                let cumleIndex = 0;
-                
-                function sonrakiCumleyiOku() {
-                    if (cumleIndex >= cumleler.length) {
-                        // Tüm cümleler bitti - mikrofonu AÇ
-                        asistanKonuşuyor = false;
-                        if (dinlemeAktif) {
-                            setTimeout(() => {
-                                try { recognition.start(); } catch(e) {}
-                            }, 500);
-                        }
-                        return;
+                utterance.onend = function() {
+                    asistanKonuşuyor = false;
+                    if (dinlemeAktif && recognition) {
+                        setTimeout(() => {
+                            try { recognition.start(); } catch(e) {}
+                        }, 300);
                     }
-                    
-                    const cumle = cumleler[cumleIndex];
-                    const utterance = new SpeechSynthesisUtterance(cumle);
-                    utterance.lang = 'tr-TR';
-                    utterance.rate = 0.9;
-                    utterance.pitch = 1.0;
-                    utterance.volume = 1.0;
-                    if (seciliSes) utterance.voice = seciliSes;
-                    
-                    utterance.onend = function() {
-                        cumleIndex++;
-                        sonrakiCumleyiOku();
-                    };
-                    
-                    window.speechSynthesis.speak(utterance);
-                }
+                };
                 
-                sonrakiCumleyiOku();
-            }
+                utterance.onerror = function() {
+                    asistanKonuşuyor = false;
+                    if (dinlemeAktif && recognition) {
+                        setTimeout(() => {
+                            try { recognition.start(); } catch(e) {}
+                        }, 300);
+                    }
+                };
+                
+                window.speechSynthesis.speak(utterance);
+            }, 200);
         }
 
         function ekranaYaz(tip, metin) {
